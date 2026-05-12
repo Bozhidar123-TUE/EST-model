@@ -237,4 +237,4 @@ Comparison of this exact solution with the Simulink model conveys that the model
 
 ![Run results 2](images/charge.png)
 
-test
+test2
