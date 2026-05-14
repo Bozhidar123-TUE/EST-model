@@ -5,13 +5,13 @@
 
 timeUnit   = 's';
 
-supplyFile = "SolarExample_supply.csv";
+supplyFile = "Team56_supply.csv";
 supplyUnit = "kW";
 
 % load the supply data
 Supply = loadSupplyData(supplyFile, timeUnit, supplyUnit);
 
-demandFile = "SolarExample_demand.csv";
+demandFile = "Team56_demand.csv";
 demandUnit = "kW";
 
 % load the demand data
@@ -31,9 +31,9 @@ aSupplyTransport = 0.01; % Dissipation coefficient
 aInjection = 0.1; % Dissipation coefficient
 
 % storage system
-EStorageMax     = 10.*unit("kWh"); % Maximum energy
-EStorageMin     = 0.0*unit("kWh"); % Minimum energy
-EStorageInitial = 2.0*unit("kWh"); % Initial energy
+EStorageMax     = 138270.*unit("kWh");  % 921.8 m³ × 150 kWh/m³
+EStorageMin     = 0.0*unit("kWh");
+EStorageInitial = 138270.*unit("kWh");  % start full (best case)
 bStorage        = 1e-6/unit("s");  % Storage dissipation coefficient
 
 % extraction system
