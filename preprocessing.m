@@ -33,7 +33,7 @@ aInjection = 0.1; % Dissipation coefficient
 % storage system
 EStorageMax     = 138270.*unit("kWh");  % 921.8 m³ × 150 kWh/m³
 EStorageMin     = 0.0*unit("kWh");
-EStorageInitial = 138270.*unit("kWh");  % start full (best case)
+EStorageInitial = 0.0*unit("kWh");  % start full (best case)
 bStorage        = 1e-6/unit("s");  % Storage dissipation coefficient
 
 % extraction system
