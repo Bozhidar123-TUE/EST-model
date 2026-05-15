@@ -1,10 +1,27 @@
 function Supply = loadSupplyData(supplyFile, timeUnit, supplyUnit)
-%   LOADSUPPLYDATA  Load the supply data from the specified file.
-%   Supply = LOADSUPPLYDATA(supplyFile, supplyUnit) loads the
-%   data in supplyFile with the time in timeUnit and the power in
-%   supplyUnit, returning a time series.
+global unit
 
-    global unit;
-    supply = importdata(supplyFile, ',');
-    Supply = timeseries(unit(supplyUnit)*supply.data(:,2),unit(timeUnit)*supply.data(:,1));
+fid = fopen(char(supplyFile), 'r');
+
+if fid == -1
+    error('Could not open supply file: %s', char(supplyFile));
+end
+
+raw = textscan(fid, '%f%f', ...
+    'Delimiter', ',', ...
+    'CommentStyle', '#', ...
+    'CollectOutput', true);
+
+fclose(fid);
+
+supplyData = raw{1};
+
+if size(supplyData, 2) < 2
+    error('Supply file was not read as two columns.');
+end
+
+Supply = timeseries( ...
+    unit(char(supplyUnit)) * supplyData(:,2), ...
+    unit(char(timeUnit))   * supplyData(:,1));
+
 end

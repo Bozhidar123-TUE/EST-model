@@ -2,17 +2,21 @@
 % before the Simulink model starts running (initFcn callback function).
 
 %% Load the supply and demand data
+addpath(genpath(fileparts(mfilename("fullpath"))));
+
+global unit
+run(fullfile(fileparts(mfilename("fullpath")), "scripts", "constants.m"));
 
 timeUnit   = 's';
 
 supplyFile = "Team56_supply.csv";
-supplyUnit = "kW";
+supplyUnit = 'kW';
 
 % load the supply data
 Supply = loadSupplyData(supplyFile, timeUnit, supplyUnit);
 
 demandFile = "Team56_demand.csv";
-demandUnit = "kW";
+demandUnit = 'kW';
 
 % load the demand data
 Demand = loadDemandData(demandFile, timeUnit, demandUnit);

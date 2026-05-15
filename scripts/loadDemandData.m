@@ -1,10 +1,27 @@
 function Demand = loadDemandData(demandFile, timeUnit, demandUnit)
-%   LOADDEMANDDATA  Load the demand data from the specified file.
-%   Demand = LOADDEMANDDATA(demandFile, timeUnit, demandUnit) loads the
-%   data in demandFile with the time in timeUnit and the power in
-%   demandUnit, returning a time series.
+global unit
 
-    global unit;
-    demand = importdata(demandFile, ',');
-    Demand = timeseries(unit(demandUnit)*demand.data(:,2),unit(timeUnit)*demand.data(:,1));
+fid = fopen(char(demandFile), 'r');
+
+if fid == -1
+    error('Could not open demand file: %s', char(demandFile));
+end
+
+raw = textscan(fid, '%f%f', ...
+    'Delimiter', ',', ...
+    'CommentStyle', '#', ...
+    'CollectOutput', true);
+
+fclose(fid);
+
+demandData = raw{1};
+
+if size(demandData, 2) < 2
+    error('Demand file was not read as two columns.');
+end
+
+Demand = timeseries( ...
+    unit(char(demandUnit)) * demandData(:,2), ...
+    unit(char(timeUnit))   * demandData(:,1));
+
 end
