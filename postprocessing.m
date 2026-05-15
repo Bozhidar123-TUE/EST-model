@@ -73,3 +73,14 @@ pie(ax, [EDirect, EfromExtraction, EBuy]/EtoDemandTransport);
 lgd = legend({"Direct from supply", "From storage", "Bought"});
 lgd.Layout.Tile = "south";
 title(sprintf("Delivered energy %3.2e [J]", EtoDemandTransport/unit('J')));
+
+fprintf('\n===== EST numerical summary =====\n');
+fprintf('Bought energy:      %8.2f kWh\n', EBuy/unit("kWh"));
+fprintf('Sold energy:        %8.2f kWh\n', ESell/unit("kWh"));
+fprintf('To storage:         %8.2f kWh\n', EtoInjection/unit("kWh"));
+fprintf('From storage:       %8.2f kWh\n', EfromExtraction/unit("kWh"));
+fprintf('Storage loss:       %8.2f kWh\n', EStorageDissipation/unit("kWh"));
+fprintf('Minimum storage:    %8.2f kWh\n', min(EStorage)/unit("kWh"));
+fprintf('Maximum storage:    %8.2f kWh\n', max(EStorage)/unit("kWh"));
+fprintf('Final storage:      %8.2f kWh\n', EStorage(end)/unit("kWh"));
+fprintf('=================================\n\n');
