@@ -33,6 +33,7 @@ aSupplyTransport = 0.01; % Dissipation coefficient
 
 % injection system
 aInjection = 0.1; % Dissipation coefficient
+PInjectionMax  = 100*unit("kW");   % Maximum charging power into zeolite storage
 
 % storage system
 EStorageMax     = 138283*unit("kWh");  % 921.8 m³ × 150 kWh/m³
@@ -42,6 +43,7 @@ bStorage        = 0/unit("s");  % Storage dissipation coefficient
 
 % extraction system
 aExtraction = 0.1; % Dissipation coefficient
+PExtractionMax = 100*unit("kW");   % Maximum discharging power from zeolite storage
 
 % transport to demand
 aDemandTransport = 0.01; % Dissipation coefficient
