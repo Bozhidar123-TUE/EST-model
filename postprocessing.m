@@ -6,44 +6,44 @@ figure;
 
 %% Supply and demand
 subplot(2,2,1);
-plot(tout/unit("day"), PSupply/unit("W"));
+plot(tout/unit("day"), PSupply/unit("kW"));
 hold on;
-plot(tout/unit("day"), PDemand/unit("W"));
+plot(tout/unit("day"), PDemand/unit("kW"));
 xlim([0 tout(end)/unit("day")]);
 grid on;
 title('Supply and demand');
 xlabel('Time [day]');
-ylabel('Power [W]');
+ylabel('Power [kW]');
 legend("Supply","Demand");
 
 %% Stored energy
 subplot(2,2,2);
-plot(tout/unit("day"), EStorage/unit("J"));
+plot(tout/unit("day"), EStorage/unit("kWh")/1000);
 xlim([0 tout(end)/unit("day")]);
 grid on;
 title('Storage');
 xlabel('Time [day]');
-ylabel('Energy [J]');
+ylabel('Energy [MWh]');
 
 %% Energy losses
 subplot(2,2,3);
-plot(tout/unit("day"), D/unit("W"));
+plot(tout/unit("day"), D/unit("kW"));
 xlim([0 tout(end)/unit("day")]);
 grid on;
 title('Losses');
 xlabel('Time [day]');
-ylabel('Dissipation rate [W]');
+ylabel('Dissipation rate [kW]');
 
 %% Load balancing
 subplot(2,2,4);
-plot(tout/unit("day"), PSell/unit("W"));
+plot(tout/unit("day"), PSell/unit("kW"));
 hold on;
-plot(tout/unit("day"), PBuy/unit("W"));
+plot(tout/unit("day"), PBuy/unit("kW"));
 xlim([0 tout(end)/unit("day")]);
 grid on;
 title('Load balancing');
 xlabel('Time [day]');
-ylabel('Power [W]');
+ylabel('Power [kW]');
 legend("Sell","Buy");
 
 %% Pie charts
@@ -55,9 +55,52 @@ ESell                = trapz(tout, PSell);
 EBuy                 = trapz(tout, PBuy);
 EtoInjection         = trapz(tout, PtoInjection);
 EfromExtraction      = trapz(tout, PfromExtraction);
-EStorageDissipation  = trapz(tout, DStorage);
-EDirect              = EfromSupplyTransport - ESell - EtoInjection;
-ESurplus             = EtoInjection-EfromExtraction-EStorageDissipation;
+ESupplyTransportLoss = trapz(tout, DSupplyTransport);
+EDemandTransportLoss = trapz(tout, DDemandTransport);
+EInjectionLoss       = trapz(tout, DInjection);
+EStorageDissipation  = trapz(tout, DStorageOnly);
+EExtractionLoss      = trapz(tout, DExtraction);
+EStorageSystemLoss = trapz(tout, DStorageSystemLoss);
+
+ETotalLoss = ESupplyTransportLoss + EDemandTransportLoss + EInjectionLoss + EStorageDissipation + EExtractionLoss;
+
+EDirect = EfromSupplyTransport - ESell - EtoInjection;
+
+ESupplyTotal = trapz(tout, PSupply);
+EDemandTotal = trapz(tout, PDemand);
+
+selfSufficiency = 1 - EBuy/EtoDemandTransport;
+soldFraction = ESell/EfromSupplyTransport;
+storageUtilisation = (max(EStorage) - min(EStorage))/(EStorageMax - EStorageMin);
+
+if EtoInjection > 0
+    injectionEfficiencyActual = 1 - EInjectionLoss/EtoInjection;
+else
+    injectionEfficiencyActual = 0;
+end
+
+if (EfromExtraction + EExtractionLoss) > 0
+    extractionEfficiencyActual = EfromExtraction/(EfromExtraction + EExtractionLoss);
+else
+    extractionEfficiencyActual = 0;
+end
+
+storageRoundTrip = injectionEfficiencyActual * extractionEfficiencyActual;
+
+storageEnergyRatio = EfromExtraction/EtoInjection;
+
+% Energy balance checks
+EStorageStart = EStorage(1);
+EStorageEnd = EStorage(end);
+EStorageDelta = EStorageEnd - EStorageStart;
+
+EtoStorageNet = EtoInjection - EInjectionLoss;
+EfromStorageGross = EfromExtraction + EExtractionLoss;
+
+storageBalanceResidual = EStorageDelta - (EtoStorageNet - EfromStorageGross - EStorageDissipation);
+
+supplyBalanceResidual = EfromSupplyTransport - (EDirect + EtoInjection + ESell);
+demandBalanceResidual = EtoDemandTransport - (EDirect + EfromExtraction + EBuy);
 
 figure;
 tiles = tiledlayout(1,2);
@@ -66,20 +109,25 @@ ax = nexttile;
 pie(ax, [EDirect, EtoInjection, ESell]/EfromSupplyTransport);
 lgd = legend({"Direct to demand", "To storage", "Sold"});
 lgd.Layout.Tile = "south";
-title(sprintf("Received energy %3.2e [J]", EfromSupplyTransport/unit('J')));
+title(sprintf("Received energy %.1f [MWh]", EfromSupplyTransport/unit("kWh")/1000));
 
 ax = nexttile;
 pie(ax, [EDirect, EfromExtraction, EBuy]/EtoDemandTransport);
 lgd = legend({"Direct from supply", "From storage", "Bought"});
 lgd.Layout.Tile = "south";
-title(sprintf("Delivered energy %3.2e [J]", EtoDemandTransport/unit('J')));
+title(sprintf("Delivered energy %.1f [MWh]", EtoDemandTransport/unit("kWh")/1000));
 
 fprintf('\n===== EST numerical summary =====\n');
 fprintf('Bought energy:      %8.2f kWh\n', EBuy/unit("kWh"));
 fprintf('Sold energy:        %8.2f kWh\n', ESell/unit("kWh"));
 fprintf('To storage:         %8.2f kWh\n', EtoInjection/unit("kWh"));
 fprintf('From storage:       %8.2f kWh\n', EfromExtraction/unit("kWh"));
-fprintf('Injection/extraction losses: %8.2f kWh\n', EStorageDissipation/unit("kWh"));
+fprintf('Supply transport losses: %8.2f kWh\n', ESupplyTransportLoss/unit("kWh"));
+fprintf('Demand transport losses: %8.2f kWh\n', EDemandTransportLoss/unit("kWh"));
+fprintf('Injection losses:        %8.2f kWh\n', EInjectionLoss/unit("kWh"));
+fprintf('Storage dissipation:     %8.2f kWh\n', EStorageDissipation/unit("kWh"));
+fprintf('Extraction losses:       %8.2f kWh\n', EExtractionLoss/unit("kWh"));
+fprintf('Total system losses:     %8.2f kWh\n', ETotalLoss/unit("kWh"));
 fprintf('Minimum storage:    %8.2f kWh\n', min(EStorage)/unit("kWh"));
 fprintf('Maximum storage:    %8.2f kWh\n', max(EStorage)/unit("kWh"));
 fprintf('Final storage:      %8.2f kWh\n', EStorage(end)/unit("kWh"));
@@ -87,4 +135,14 @@ fprintf('Maximum buy power:  %8.2f kW\n', max(PBuy)/unit("kW"));
 fprintf('Maximum sell power: %8.2f kW\n', max(PSell)/unit("kW"));
 fprintf('Maximum injection:  %8.2f kW\n', max(PtoInjection)/unit("kW"));
 fprintf('Maximum extraction: %8.2f kW\n', max(PfromExtraction)/unit("kW"));
+fprintf('Self-sufficiency:    %8.2f %%\n', selfSufficiency*100);
+fprintf('Sold supply fraction:%8.2f %%\n', soldFraction*100);
+fprintf('Storage utilisation: %8.2f %%\n', storageUtilisation*100);
+fprintf('Injection efficiency:%8.2f %%\n', injectionEfficiencyActual*100);
+fprintf('Extraction efficiency:%7.2f %%\n', extractionEfficiencyActual*100);
+fprintf('Round-trip efficiency:%7.2f %%\n', storageRoundTrip*100);
+fprintf('Storage energy ratio:%8.2f %%\n', storageEnergyRatio*100);
+fprintf('Storage balance residual:%8.4f kWh\n', storageBalanceResidual/unit("kWh"));
+fprintf('Supply balance residual: %8.4f kWh\n', supplyBalanceResidual/unit("kWh"));
+fprintf('Demand balance residual: %8.4f kWh\n', demandBalanceResidual/unit("kWh"));
 fprintf('=================================\n\n');

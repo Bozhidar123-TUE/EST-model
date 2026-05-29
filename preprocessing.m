@@ -23,7 +23,7 @@ Demand = loadDemandData(demandFile, timeUnit, demandUnit);
 
 %% Simulation settings
 
-deltat = 5*unit("min");
+deltat = 15*unit("min");
 stopt  = min([Supply.Timeinfo.End, Demand.Timeinfo.End]);
 
 %% System parameters
@@ -37,8 +37,8 @@ PInjectionMax  = 100*unit("kW");   % Maximum charging power into zeolite storage
 
 % storage system
 EStorageMax     = 138283*unit("kWh");  % 921.8 m³ × 150 kWh/m³
-EStorageMin     = 0.0*unit("kWh");
-EStorageInitial = EStorageMax;  % start full (best case)
+EStorageMin = 0.20*EStorageMax; % Set like this to always keep some energy in the storage
+EStorageInitial = 76880.87*unit("kWh"); % starts with the ended value after full storage
 bStorage        = 0/unit("s");  % Storage dissipation coefficient
 
 % extraction system
