@@ -54,13 +54,14 @@ EtoDemandTransport   = trapz(tout, PtoDemandTransport);
 ESell                = trapz(tout, PSell);
 EBuy                 = trapz(tout, PBuy);
 EtoInjection         = trapz(tout, PtoInjection);
+ESteamRecovered      = trapz(tout, PSteamRecovered);
 EfromExtraction      = trapz(tout, PfromExtraction);
 ESupplyTransportLoss = trapz(tout, DSupplyTransport);
 EDemandTransportLoss = trapz(tout, DDemandTransport);
 EInjectionLoss       = trapz(tout, DInjection);
 EStorageDissipation  = trapz(tout, DStorageOnly);
 EExtractionLoss      = trapz(tout, DExtraction);
-EStorageSystemLoss = trapz(tout, DStorageSystemLoss);
+EStorageSystemLoss   = trapz(tout, DStorageSystemLoss);
 
 ETotalLoss = ESupplyTransportLoss + EDemandTransportLoss + EInjectionLoss + EStorageDissipation + EExtractionLoss;
 
@@ -87,17 +88,21 @@ end
 
 storageRoundTrip = injectionEfficiencyActual * extractionEfficiencyActual;
 
-storageEnergyRatio = EfromExtraction/EtoInjection;
+EtoStorageUseful = EtoInjection - EInjectionLoss + ESteamRecovered;
+
+storageEnergyRatio = EfromExtraction/EtoStorageUseful;
+steamRecoveryFraction = ESteamRecovered/EtoStorageUseful;
+chargingEffectiveness = EtoStorageUseful/EtoInjection;
 
 % Energy balance checks
 EStorageStart = EStorage(1);
 EStorageEnd = EStorage(end);
 EStorageDelta = EStorageEnd - EStorageStart;
 
-EtoStorageNet = EtoInjection - EInjectionLoss;
+EToStorageNet = EtoInjection - EInjectionLoss + ESteamRecovered;
 EfromStorageGross = EfromExtraction + EExtractionLoss;
 
-storageBalanceResidual = EStorageDelta - (EtoStorageNet - EfromStorageGross - EStorageDissipation);
+storageBalanceResidual = EStorageDelta - (EToStorageNet - EfromStorageGross - EStorageDissipation);
 
 supplyBalanceResidual = EfromSupplyTransport - (EDirect + EtoInjection + ESell);
 demandBalanceResidual = EtoDemandTransport - (EDirect + EfromExtraction + EBuy);
@@ -125,6 +130,7 @@ fprintf('From storage:       %8.2f kWh\n', EfromExtraction/unit("kWh"));
 fprintf('Supply transport losses: %8.2f kWh\n', ESupplyTransportLoss/unit("kWh"));
 fprintf('Demand transport losses: %8.2f kWh\n', EDemandTransportLoss/unit("kWh"));
 fprintf('Injection losses:        %8.2f kWh\n', EInjectionLoss/unit("kWh"));
+fprintf('Steam recovered energy: %.2f kWh\n', ESteamRecovered/unit("kWh"));
 fprintf('Storage dissipation:     %8.2f kWh\n', EStorageDissipation/unit("kWh"));
 fprintf('Extraction losses:       %8.2f kWh\n', EExtractionLoss/unit("kWh"));
 fprintf('Total system losses:     %8.2f kWh\n', ETotalLoss/unit("kWh"));
@@ -141,8 +147,18 @@ fprintf('Storage utilisation: %8.2f %%\n', storageUtilisation*100);
 fprintf('Injection efficiency:%8.2f %%\n', injectionEfficiencyActual*100);
 fprintf('Extraction efficiency:%7.2f %%\n', extractionEfficiencyActual*100);
 fprintf('Round-trip efficiency:%7.2f %%\n', storageRoundTrip*100);
-fprintf('Storage energy ratio:%8.2f %%\n', storageEnergyRatio*100);
+fprintf('Storage energy ratio: %.2f %%\n', storageEnergyRatio*100);
 fprintf('Storage balance residual:%8.4f kWh\n', storageBalanceResidual/unit("kWh"));
 fprintf('Supply balance residual: %8.4f kWh\n', supplyBalanceResidual/unit("kWh"));
 fprintf('Demand balance residual: %8.4f kWh\n', demandBalanceResidual/unit("kWh"));
+fprintf('Useful energy to storage: %.2f kWh\n', EtoStorageUseful/unit("kWh"));
+fprintf('Steam recovery fraction: %.2f %%\n', steamRecoveryFraction*100);
+fprintf('Charging effectiveness: %.2f %%\n', chargingEffectiveness*100);
+fprintf('Cable efficiency:       %8.2f %%\n', etaCable*100);
+fprintf('Injection efficiency:   %8.2f %%\n', etaInjection*100);
+fprintf('Storage efficiency:     %8.2f %%\n', etaStorage*100);
+fprintf('Heat converter eff.:    %8.2f %%\n', etaHeatConverter*100);
+fprintf('Piping efficiency:      %8.2f %%\n', etaPiping*100);
+fprintf('Extraction before pipe: %8.2f %%\n', etaExtraction*100);
+fprintf('Total extraction chain: %8.2f %%\n', etaExtractionToDemand*100);
 fprintf('=================================\n\n');
