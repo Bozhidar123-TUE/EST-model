@@ -22,6 +22,28 @@ demandUnit = 'kW';
 % Load the demand data
 Demand = loadDemandData(demandFile, timeUnit, demandUnit);
 
+%% Add supply demand fluctuation
+
+% 1. Adjustable Parameters
+daysHalfDecay = 20.1;      % (h) Days it takes for the fluctuation to decay to half
+demandScaleWinter = 1.0;   % Winter demand multiplier (e.g., 1.5 = 50% increase at winter peak)
+supplyScaleWinter = 1.0;   % Winter supply multiplier (e.g., 0.5 = 50% decrease at winter peak)
+
+% 2. Convert time vector to days (CSV time is in seconds)
+time_days = Supply.Time / (24 * 3600);
+
+% 3. Base Formula (Exactly as provided, peaks at ~0.01 at day 0 and day 365)
+fluctuation_base = exp(-time_days ./ daysHalfDecay .* (2/3)) + ...
+                   exp((time_days - 365) ./ daysHalfDecay .* (2/3));
+
+% 4. Add more demand over winter
+% Correction: Multiply base by 100 to normalize the 0.01 peak to 1.0. 
+% Subtract 1 from scale so the summer baseline remains unmodified (* 1.0).
+Demand.Data = Demand.Data .* (1 + (demandScaleWinter - 1) .* fluctuation_base);
+
+% 5. Reduce supply over winter
+% Correction: Use 1 - (1 - scale) so winter drops to your scale (0.5), while summer stays at 1.0.
+Supply.Data = Supply.Data .* (1 - (1 - supplyScaleWinter) .* fluctuation_base);
 %% Simulation settings
 
 deltat = 15*unit("min");
@@ -63,14 +85,17 @@ etaPiping = 0.97;                  % Piping efficiency = 97%
 % Transport from supply: cable losses
 aSupplyTransport = 1 - etaCable;
 
+% Parameter to increase the dissipation rates for testing
+testing_dissaption = 1.0;
+
 % Injection: heater + fan losses
-aInjection = 1 - etaInjection;
+aInjection = (1 - etaInjection)*testing_dissaption;
 
 % Extraction: storage recovery + heat converter losses
 % Piping is NOT included here, because piping is already handled by
 % the demand transport block.
 etaExtraction = etaStorage * etaHeatConverter;
-aExtraction = 1 - etaExtraction;
+aExtraction = (1 - etaExtraction)*testing_dissaption;
 
 % Transport to demand: piping losses
 aDemandTransport = 1 - etaPiping;
@@ -109,8 +134,8 @@ steamRecoveryGain1 = 1 + steamRecoveryStrength*(steamRecoveryGainFull - 1);
 
 
 EStorageMax = 138283*unit("kWh");      % 921.8 m^3 * 150 kWh/m^3
-EStorageMin = 0.20*EStorageMax;        % 20% reserve level
-EStorageInitial = 76880.87*unit("kWh");
+EStorageMin = 0.10*EStorageMax;        % 20% reserve level
+EStorageInitial = 64880.87*unit("kWh");
 
 % Standing storage dissipation is kept at zero.
 % Storage efficiency is already included in aExtraction.
