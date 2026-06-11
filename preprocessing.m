@@ -102,7 +102,7 @@ steamRecoveryStrength = 0.50;
 steamRecoveryGainFull = 143684 / 73428;
 
 % Final gain used by the Injection block
-steamRecoveryGain = 1 + steamRecoveryStrength*(steamRecoveryGainFull - 1);
+steamRecoveryGain1 = 1 + steamRecoveryStrength*(steamRecoveryGainFull - 1);
 
 
 %  Storage system
@@ -115,6 +115,7 @@ EStorageInitial = 76880.87*unit("kWh");
 % Standing storage dissipation is kept at zero.
 % Storage efficiency is already included in aExtraction.
 bStorage = 0/unit("s");
+
 
 %  Useful combined efficiency values for checking/post-processing
 
